@@ -1,3 +1,4 @@
+"""this assigment is about writing accounting system using classes"""
 import csv
 import random
 from datetime import datetime
@@ -5,10 +6,12 @@ import os
 
 
 class AccountingSystem:
-    def __init__(self, name_accNO: str):
+    """writing class"""
+
+    def __init__(self, name_accno: str):
         """constructor"""
         self.current_path = os.getcwd()
-        self.current_path = self.current_path + "/" + name_accNO
+        self.current_path = self.current_path + "/" + name_accno
         os.mkdir(self.current_path)
 
     def ledger(self, date, category, description, debit, credit, mode_of_payment):
