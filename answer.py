@@ -4,20 +4,21 @@ from datetime import datetime
 import os
 
 class AccountingSystem():
-    def __init__(self, name):
-        current_path = os.getcwd()
-        filename = current_path+ '/' + name
-        os.mkdir(current_path)
-        os.chdir(current_path)
+    def __init__(self, name_accNO: str):
+        """constructor"""
+        self.current_path = os.getcwd()
+        self.current_path = self.current_path+ '/' + name_accNO
+        os.mkdir(self.current_path)
+
     def ledger(self, date, category, description, debit, credit, mode_of_payment):
         """function to add data to the ledger file"""
-        if not os.path.exists('ledger.csv'):
-            with open('ledger.csv','w', encoding='utf8') as f:
+        file_name = self.current_path + '/ledger.csv'
+        if not os.path.exists(file_name):
+            with open(file_name,'w', encoding='utf8') as f:
                 csv_writer = csv.writer(f)
-                csv_writer.writerow(['Date', 'Category', 'Description', 'Debit', 'Credit', 'Balance', 'Mode of Payment'])
                 current_balance = 0
         else:
-            with open("ledger.csv", "r", encoding="utf8") as f:
+            with open(file_name, "r", encoding="utf8") as f:
                 csv_reader = csv.DictReader(f)
                 data = list(csv_reader)
                 if f.tell() == 0:
@@ -41,7 +42,7 @@ class AccountingSystem():
         }
         headers = list(data.keys())
 
-        with open("ledger.csv", "a", encoding="utf8", newline="\n") as f:
+        with open(file_name, "a", encoding="utf8", newline="\n") as f:
             csv_writer = csv.DictWriter(f, fieldnames=headers)
             if f.tell() == 0:
                 csv_writer.writeheader()
@@ -50,7 +51,7 @@ class AccountingSystem():
     
     def credit(self,date, amount, category, description, mode_of_payment):
         """function to add data of credited amount"""
-        return self. ledger(date, category, description, 0, amount, mode_of_payment)
+        return self.ledger(date, category, description, 0, amount, mode_of_payment)
 
 
     def debit(self, date, amount, category, description, mode_of_payment):
@@ -59,10 +60,10 @@ class AccountingSystem():
 
 
     def transaction(
-        self, date, amount, category, description, mode_of_payment, credit_or_debit=True
+        self, date, amount, category, description, mode_of_payment, credit=True
     ):
         """function to add credited or debited transaction"""
-        if credit_or_debit:
+        if credit:
             return "Credited " + str(
                 (self.ledger(date, category, description, 0, amount, mode_of_payment))
             )
@@ -71,9 +72,10 @@ class AccountingSystem():
         )
 
 
-    def generate_category_report(self, filename):
+    def generate_category_report(self):
         """function to generate category report"""
-        with open(filename, "r", encoding="utf8") as f:
+        ledger_filename = self.current_path + '/ledger.csv'
+        with open(ledger_filename, "r", encoding="utf8") as f:
             csv_reader = csv.DictReader(f)
             main_data = list(csv_reader)
 
@@ -82,15 +84,17 @@ class AccountingSystem():
             {key: value for key, value in x.items() if key in category_fieldnames}
             for x in main_data
         ]
-        with open("category.csv", "w", encoding="utf8", newline="\n") as f:
+        category_filename = self.current_path + '/category.csv'
+        with open(category_filename, "w", encoding="utf8", newline="\n") as f:
             category_writer = csv.DictWriter(f, fieldnames=category_fieldnames)
             category_writer.writeheader()
             category_writer.writerows(category_data)
 
 
-    def generate_payment_report(self, filename):
+    def generate_payment_report(self,):
         """function to generate mode_of_payment report"""
-        with open(filename, "r", encoding="utf8") as f:
+        ledger_filename = self.current_path + '/ledger.csv'
+        with open(ledger_filename, "r", encoding="utf8") as f:
             csv_reader = csv.DictReader(f)
             main_data = list(csv_reader)
 
@@ -99,19 +103,20 @@ class AccountingSystem():
             {key: value for key, value in x.items() if key in category_fieldnames}
             for x in main_data
         ]
-        with open("mode_of_payment.csv", "w", encoding="utf8", newline="\n") as f:
+        payment_filename = self.current_path + '/mode_of_payment.csv'
+        with open(payment_filename, "w", encoding="utf8", newline="\n") as f:
             category_writer = csv.DictWriter(f, fieldnames=category_fieldnames)
             category_writer.writeheader()
             category_writer.writerows(category_data)
 
 
-    def print_report(self, filename):
+    def print_report(self):
         # pylint: disable-msg=too-many-locals
         """function to print report"""
-        with open(filename, "r", encoding="utf8") as f:
+        ledger_filename = self.current_path + '/ledger.csv'
+        with open(ledger_filename, "r", encoding="utf8") as f:
             csv_reader = csv.DictReader(f)
             data = list(csv_reader)
-
         header = [
             "Category",
             "Year",
@@ -161,7 +166,9 @@ class AccountingSystem():
 
             aggregate_data[key]["Debit"][month - 1] += float(x["Debit"])
             aggregate_data[key]["Credit"][month - 1] += float(x["Credit"])
-        with open("report.csv", "w", encoding="utf8", newline="\n") as f:
+
+        report_filename = self.current_path + '/report.csv'
+        with open(report_filename, "w", encoding="utf8", newline="\n") as f:
             csv_writer = csv.DictWriter(f, fieldnames=header)
             csv_writer.writeheader()
 
@@ -179,17 +186,19 @@ class AccountingSystem():
                 )
                 csv_writer.writerow(row_data)
 
-        with open("report.csv", "r", encoding="utf8") as f:
+        with open(report_filename, "r", encoding="utf8") as f:
             report_reader = csv.reader(f)
             for x in report_reader:
                 print(x)
 
 
-    def generate_txt(self, filename):
+    def generate_txt(self):
         """function to generate text file of report generated"""
-        self.print_report(filename)
-        with open("report.csv", "r", encoding="utf8") as f1, open(
-            "report.txt", "w", encoding="utf8"
+        report_filename = self.current_path + '/report.csv'
+        text_filename = self.current_path + '/report.txt'
+        self.print_report()
+        with open(report_filename, "r", encoding="utf8") as f1, open(
+            text_filename, "w", encoding="utf8"
         ) as f2:
             report_reader = csv.reader(f1)
             for x in report_reader:
@@ -244,15 +253,17 @@ class AccountingSystem():
                 mode_of_payment_list[i],
             )
 
+
 if __name__ == "__main__":
     gaurav = AccountingSystem('Gaurav007')
     gaurav.generate_random_data(10)
-    gaurav.generate_category_report('ledger.csv')
-    gaurav.generate_payment_report('ledger.csv')
-    gaurav.generate_txt('ledger.csv')
+    # gaurav.generate_category_report()
+    # gaurav.generate_payment_report()
+    # gaurav.generate_txt()
 
-    akash = AccountingSystem('Akash')
-    akash.generate_random_data(10)
-    akash.generate_category_report('ledger.csv')
-    akash.generate_payment_report('ledger.csv')
-    akash.generate_txt('ledger.csv')
+    # akash = AccountingSystem('Akash197')
+    # akash.generate_random_data(10)
+    # akash.generate_category_report()
+    # akash.generate_payment_report()
+    # akash.generate_txt()
+    gaurav.print_report()
