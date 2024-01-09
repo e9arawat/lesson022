@@ -1,213 +1,276 @@
-
-"""accounting system"""
+"""this assigment is about writing accounting system using classes"""
 import csv
-from datetime import datetime
 import random
+from datetime import datetime
 import os
 
-# ledger_file = "ledger.csv"
-class Accounting:
-    
-    def __init__(self,name,ledger_file='ledger.csv'):
-        self.ledger_file=ledger_file
-        self.name=name
-        self.current_path=os.getcwd()
-        self.folder_path = self.current_path+ '/'+ self.name
-        
-        if not os.path.exists(self.folder_path):
-            os.mkdir(self.folder_path)
-        
-    def get_last_entry(self,filename):
-        """to get the last entry from ledger"""
-        with open(filename, "r", newline="", encoding="utf-8") as file:
-            reader = csv.reader(file)
-            last_entry = list(reader)[-1]
-        return last_entry
 
+class AccountingSystem:
+    """writing class"""
 
-    def get_last_balance(self,filename):
-        """to get the last balance from ledger"""
-        last_entry = self.get_last_entry(filename)
-        return float(last_entry[5])
+    def __init__(self, name_accno: str):
+        """constructor"""
+        self.current_path = os.getcwd()
+        self.current_path = self.current_path + "/" + name_accno
+        os.mkdir(self.current_path)
 
-
-    def credit(self,amount):
-        """this is credit func"""
-        last_entry = self.get_last_entry(self.ledger_file)
-        new_balance = float(last_entry[1]) + amount
-        self.ledger(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            amount,
-            "credit",
-            "credit transaction",
-            "Not_avail",
-            new_balance,
-        )
-        return new_balance
-
-
-    def debit(self,amount):
-        """Func to debit amount"""
-        last_entry = self.get_last_entry(self.ledger_file)
-        new_balance = float(last_entry[1]) - amount
-        self.ledger(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            amount,
-            "debit",
-            "debit transaction",
-            "Not_avail",
-            new_balance,
-        )
-        return new_balance
-
-
-    def transaction(self,amount, category, desc, mode_of_payment, credit=False):
-        """Function to make a transaction"""
-
-        if credit:
-            credit(amount)
+    def ledger(self, date, category, description, debit, credit, mode_of_payment):
+        """function to add data to the ledger file"""
+        file_name = self.current_path + "/ledger.csv"
+        if not os.path.exists(file_name):
+            with open(file_name, "w", encoding="utf8") as f:
+                csv_writer = csv.writer(f)
+                current_balance = 0
         else:
-            self.debit(amount)
-        return self.get_last_balance(self.ledger_file)
+            with open(file_name, "r", encoding="utf8") as f:
+                csv_reader = csv.DictReader(f)
+                data = list(csv_reader)
+                if f.tell() == 0:
+                    current_balance = 0
+                else:
+                    latest_data = data[-1]
+                    current_balance = latest_data["Balance"]
+        if debit:
+            current_balance = int(current_balance) - debit
+        if credit:
+            current_balance = int(current_balance) + credit
 
+        data = {
+            "Date": date,
+            "Category": category,
+            "Description": description,
+            "Debit": debit,
+            "Credit": credit,
+            "Balance": current_balance,
+            "Mode of Payment": mode_of_payment,
+        }
+        headers = list(data.keys())
 
-    def ledger(self,date, amount, category, desc, mode_of_payment, balance):
-        """Function to store all information in ledger"""
-        with open(self.ledger_file, "a", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow([date, amount, category, desc, mode_of_payment, balance])
+        with open(file_name, "a", encoding="utf8", newline="\n") as f:
+            csv_writer = csv.DictWriter(f, fieldnames=headers)
+            if f.tell() == 0:
+                csv_writer.writeheader()
+            csv_writer.writerow(data)
+        return current_balance
 
+    def credit(self, date, amount, category, description, mode_of_payment):
+        """function to add data of credited amount"""
+        return self.ledger(date, category, description, 0, amount, mode_of_payment)
 
-    def generate_category_report(self,filename):
-        """Function to generate category report"""
-        with open(filename, "r", newline="", encoding="utf-8") as file:
-            reader = csv.reader(file)
-            next(reader)
-            for row in reader:
-                cat_data=[]
-                cat_data.append([row[0],row[2],row[1]])
+    def debit(self, date, amount, category, description, mode_of_payment):
+        """function to add data of debited amount"""
+        return self.ledger(date, category, description, amount, 0, mode_of_payment)
 
-            category_filename = self.folder_path +"/category.csv"
-            with open(
-                category_filename, "w", newline="", encoding="utf-8"
-            ) as category_file:
-                writer = csv.writer(category_file)
-                writer.writerow(["date", "Category", "Amount"])
-                writer.writerows(cat_data)
+    def transaction(
+        self, date, amount, category, description, mode_of_payment, credit=True
+    ):
+        """function to add credited or debited transaction"""
+        if credit:
+            return "Credited " + str(
+                (self.ledger(date, category, description, 0, amount, mode_of_payment))
+            )
+        return "Debited " + str(
+            (self.ledger(date, category, description, amount, 0, mode_of_payment))
+        )
 
+    def generate_category_report(self):
+        """function to generate category report"""
+        ledger_filename = self.current_path + "/ledger.csv"
+        with open(ledger_filename, "r", encoding="utf8") as f:
+            csv_reader = csv.DictReader(f)
+            main_data = list(csv_reader)
 
-    def generate_payment_report(self,filename):
-        """to generate payment report"""
-        with open(filename, "r", newline="", encoding="utf-8") as file:
-            reader = csv.reader(file)
-            for row in reader:
-                pay_data=[]
-                pay_data.append([row[0],row[4],row[1]])
+        category_fieldnames = ["Date", "Category", "Debit", "Credit"]
+        category_data = [
+            {key: value for key, value in x.items() if key in category_fieldnames}
+            for x in main_data
+        ]
+        category_filename = self.current_path + "/category.csv"
+        with open(category_filename, "w", encoding="utf8", newline="\n") as f:
+            category_writer = csv.DictWriter(f, fieldnames=category_fieldnames)
+            category_writer.writeheader()
+            category_writer.writerows(category_data)
 
-            payment_filename = self.folder_path +"/payment.csv"
-            with open(payment_filename, "w", newline="", encoding="utf-8") as payment_file:
-                writer = csv.writer(payment_file)
-                writer.writerow(["date", "Mode Of Payment", "amount"])
-                writer.writerows(pay_data)
+    def generate_payment_report(
+        self,
+    ):
+        """function to generate mode_of_payment report"""
+        ledger_filename = self.current_path + "/ledger.csv"
+        with open(ledger_filename, "r", encoding="utf8") as f:
+            csv_reader = csv.DictReader(f)
+            main_data = list(csv_reader)
 
+        category_fieldnames = ["Date", "Debit", "Credit", "Mode of Payment"]
+        category_data = [
+            {key: value for key, value in x.items() if key in category_fieldnames}
+            for x in main_data
+        ]
+        payment_filename = self.current_path + "/mode_of_payment.csv"
+        with open(payment_filename, "w", encoding="utf8", newline="\n") as f:
+            category_writer = csv.DictWriter(f, fieldnames=category_fieldnames)
+            category_writer.writeheader()
+            category_writer.writerows(category_data)
 
-    def print_reports(self):
-        """print report"""
-        categories = set()
-        months = set()
-        years=set()
-        data = {}
+    def print_report(self):
+        """function to print report"""
+        ledger_filename = self.current_path + "/ledger.csv"
+        with open(ledger_filename, "r", encoding="utf8") as f:
+            csv_reader = csv.DictReader(f)
+            data = list(csv_reader)
+        header = [
+            "Category",
+            "Year",
+            "Jan",
+            "Feb",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "Sept",
+            "Oct",
+            "Nov",
+            "Dec",
+            "Total Debit",
+            "Total Credit",
+            "Final Balance",
+        ]
+        month_list = [
+            "Jan",
+            "Feb",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "Sept",
+            "Oct",
+            "Nov",
+            "Dec",
+        ]
 
-        with open(self.ledger_file, "r", newline="", encoding="utf-8") as file:
-            reader = csv.reader(file)
-            next(reader)
-            for row in reader:
-                print(row)
-                date = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-                month = date.strftime("%B")
-                year=date.strftime("%Y")
-                category = row[2]
-                categories.add(category)
-                months.add(month)
-                years.add(year)     
-
-                if category not in data:
-                    data[category] = {}
-                
-                if 'Year' not in data[category]:
-                    data[category]['Year'] = year
-                if month not in data[category]:
-                    data[category][month] = 0
-                    data[category][month] += float(row[1])    
-                    
-                all_months = sorted(list(months))
-                # print(data[category]['Year'])
-        print("\t".join(["Category"] + ["Year"] + all_months))
-        for category, month_data in data.items():
-            values = [f"{month_data.get(month, 0):.2f}" for month in all_months]
-            values = [data[category]['Year']] + values
-            # print(values)
-            print("\t".join([category] + values))
-
-        return data
-
-
-    def generate_txt(self,report_data):
-        """to generate text file"""
-        with open(self.folder_path +"/report.txt", "w", encoding="utf-8") as file:
-            for cat, month in report_data.items():
-                file.write(
-                    cat
-                    + "\t"
-                    + "\t".join(f"{m}: {amount:.2f}" for m, amount in month.items())
-                    + "\n"
-                )
-
-
-    def generate_random_data(self):
-        """this creates random data for checking"""
-        categories = ["Food", "Rent", "Utilities", "Entertainment", "Travel"]
-        descriptions = ["Groceries", "Restaurant", "Internet", "Movie", "Flight"]
-        modes_of_payment = ["Credit Card", "Debit Card", "Cash", "G-pay", "Paytm"]
-
-        for _ in range(10):
-            amount = round(random.randint(1000, 10000))
-            category = random.choice(categories)
-            desc = random.choice(descriptions)
-            mode_of_payment = random.choice(modes_of_payment)
-            credit_amount = random.choice([True, False])
-
-            if credit_amount:
-                self.credit(amount)
+        aggregate_data = {}
+        for x in data:
+            date_object = x["Date"]
+            year = int(date_object[:4])
+            if date_object[6] == "-":
+                month = int(date_object[5:6])
             else:
-                self.debit(amount)
+                month = int(date_object[5:7])
+            key = (x["Category"], year, month_list[month - 1])
 
+            if key not in aggregate_data:
+                aggregate_data[key] = {"Debit": [0] * 12, "Credit": [0] * 12}
+
+            aggregate_data[key]["Debit"][month - 1] += float(x["Debit"])
+            aggregate_data[key]["Credit"][month - 1] += float(x["Credit"])
+
+        report_filename = self.current_path + "/report.csv"
+        with open(report_filename, "w", encoding="utf8", newline="\n") as f:
+            csv_writer = csv.DictWriter(f, fieldnames=header)
+            csv_writer.writeheader()
+
+            for key, value in aggregate_data.items():
+                category, year, _ = key
+                row_data = {"Category": category, "Year": year}
+
+                for i, month in enumerate(month_list):
+                    row_data[month] = value["Credit"][i] - value["Debit"][i]
+
+                row_data["Total Debit"] = sum(value["Debit"])
+                row_data["Total Credit"] = sum(value["Credit"])
+                row_data["Final Balance"] = (
+                    row_data["Total Credit"] - row_data["Total Debit"]
+                )
+                csv_writer.writerow(row_data)
+
+        with open(report_filename, "r", encoding="utf8") as f:
+            report_reader = csv.reader(f)
+            for x in report_reader:
+                print(x)
+
+    def generate_txt(self):
+        """function to generate text file of report generated"""
+        report_filename = self.current_path + "/report.csv"
+        text_filename = self.current_path + "/report.txt"
+        self.print_report()
+        with open(report_filename, "r", encoding="utf8") as f1, open(
+            text_filename, "w", encoding="utf8"
+        ) as f2:
+            report_reader = csv.reader(f1)
+            for x in report_reader:
+                temp = ""
+                print(x)
+                for index, i in enumerate(x):
+                    if index in range(1, 14):
+                        temp += f"{i:10}"
+                    else:
+                        temp += f"{i:14}"
+                temp += "\n"
+                f2.write(temp)
+
+    def generate_random_data(self, n):
+        """function to generate random data"""
+        current_year = datetime.now().year
+        start_year = current_year - n - 1
+        date_list = []
+        date_list = [
+            str(random.randint(start_year, current_year - 1))
+            + "-"
+            + str(random.randint(1, 12))
+            + "-"
+            + str(random.randint(1, 28))
+            for i in range(100)
+        ]
+
+        date_list = sorted(date_list)
+        categories = ["Food", "Rent", "Arcade", "Movies", "Travel", "Petrol", "EMI"]
+        descriptions = ["Groceries", "Restaurant", "Internet", "Movie", "Flight"]
+        modes_of_payment = [
+            "Credit Card",
+            "Debit Card",
+            "Cash",
+            "G-pay",
+            "Paytm",
+            "Amazon-pay",
+            "Phone-pay",
+        ]
+
+        category_list = random.choices(categories, k=100)
+        description_list = random.choices(descriptions, k=100)
+        mode_of_payment_list = random.choices(modes_of_payment, k=100)
+        print(category_list)
+        debit_list, credit_list = [], []
+        for i in range(100):
+            debit_or_credit = random.randint(0, 2)
+            if debit_or_credit:
+                debit_list.append(0)
+                credit_list.append(random.randint(500, 100000))
+            else:
+                debit_list.append(random.randint(500, 100000))
+                credit_list.append(0)
             self.ledger(
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                amount,
-                category,
-                desc,
-                mode_of_payment,
-                self.get_last_balance(self.ledger_file),
+                date_list[i],
+                category_list[i],
+                description_list[i],
+                debit_list[i],
+                credit_list[i],
+                mode_of_payment_list[i],
             )
 
 
 if __name__ == "__main__":
-    # acc_obj=Accounting('Gaurav')
-    # acc_obj.generate_random_data()
-    # report_data = acc_obj.print_reports()
-    # acc_obj.print_reports()
-    # acc_obj.generate_category_report('ledger.csv')
-    # acc_obj.generate_payment_report('ledger.csv')
-    # acc_obj.generate_txt(report_data)
-    # print(acc_obj.credit(4000))
-    # print(acc_obj.debit(2000))
-    
-    acc_obj1=Accounting('Akash')
-    acc_obj1.generate_random_data()
-    report_data = acc_obj1.print_reports()
-    acc_obj1.print_reports()
-    acc_obj1.generate_category_report('ledger.csv')
-    acc_obj1.generate_payment_report('ledger.csv')
-    acc_obj1.generate_txt(report_data)
-    
+    gaurav = AccountingSystem("Gaurav007")
+    gaurav.generate_random_data(10)
+    # gaurav.generate_category_report()
+    # gaurav.generate_payment_report()
+    # gaurav.generate_txt()
+
+    # akash = AccountingSystem('Akash197')
+    # akash.generate_random_data(10)
+    # akash.generate_category_report()
+    # akash.generate_payment_report()
+    # akash.generate_txt()
+    gaurav.print_report()
