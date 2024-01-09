@@ -1,0 +1,8 @@
+Entertainment	January: 25767.92
+Rent	January: 5713.86
+Food	January: 1640.69	May: 303.50
+Credit	January: 4000.00	May: 4000.00
+debit	January: 26428.00
+credit	January: 31534.00
+Utilities	January: 16732.00
+Travel	January: 9784.00
