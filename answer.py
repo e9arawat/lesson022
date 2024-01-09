@@ -111,7 +111,6 @@ class AccountingSystem():
 
 
     def print_report(self):
-        # pylint: disable-msg=too-many-locals
         """function to print report"""
         ledger_filename = self.current_path + '/ledger.csv'
         with open(ledger_filename, "r", encoding="utf8") as f:
