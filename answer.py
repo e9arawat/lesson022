@@ -3,18 +3,19 @@ import random
 from datetime import datetime
 import os
 
-class AccountingSystem():
+
+class AccountingSystem:
     def __init__(self, name_accNO: str):
         """constructor"""
         self.current_path = os.getcwd()
-        self.current_path = self.current_path+ '/' + name_accNO
+        self.current_path = self.current_path + "/" + name_accNO
         os.mkdir(self.current_path)
 
     def ledger(self, date, category, description, debit, credit, mode_of_payment):
         """function to add data to the ledger file"""
-        file_name = self.current_path + '/ledger.csv'
+        file_name = self.current_path + "/ledger.csv"
         if not os.path.exists(file_name):
-            with open(file_name,'w', encoding='utf8') as f:
+            with open(file_name, "w", encoding="utf8") as f:
                 csv_writer = csv.writer(f)
                 current_balance = 0
         else:
@@ -48,16 +49,14 @@ class AccountingSystem():
                 csv_writer.writeheader()
             csv_writer.writerow(data)
         return current_balance
-    
-    def credit(self,date, amount, category, description, mode_of_payment):
+
+    def credit(self, date, amount, category, description, mode_of_payment):
         """function to add data of credited amount"""
         return self.ledger(date, category, description, 0, amount, mode_of_payment)
-
 
     def debit(self, date, amount, category, description, mode_of_payment):
         """function to add data of debited amount"""
         return self.ledger(date, category, description, amount, 0, mode_of_payment)
-
 
     def transaction(
         self, date, amount, category, description, mode_of_payment, credit=True
@@ -71,10 +70,9 @@ class AccountingSystem():
             (self.ledger(date, category, description, amount, 0, mode_of_payment))
         )
 
-
     def generate_category_report(self):
         """function to generate category report"""
-        ledger_filename = self.current_path + '/ledger.csv'
+        ledger_filename = self.current_path + "/ledger.csv"
         with open(ledger_filename, "r", encoding="utf8") as f:
             csv_reader = csv.DictReader(f)
             main_data = list(csv_reader)
@@ -84,16 +82,17 @@ class AccountingSystem():
             {key: value for key, value in x.items() if key in category_fieldnames}
             for x in main_data
         ]
-        category_filename = self.current_path + '/category.csv'
+        category_filename = self.current_path + "/category.csv"
         with open(category_filename, "w", encoding="utf8", newline="\n") as f:
             category_writer = csv.DictWriter(f, fieldnames=category_fieldnames)
             category_writer.writeheader()
             category_writer.writerows(category_data)
 
-
-    def generate_payment_report(self,):
+    def generate_payment_report(
+        self,
+    ):
         """function to generate mode_of_payment report"""
-        ledger_filename = self.current_path + '/ledger.csv'
+        ledger_filename = self.current_path + "/ledger.csv"
         with open(ledger_filename, "r", encoding="utf8") as f:
             csv_reader = csv.DictReader(f)
             main_data = list(csv_reader)
@@ -103,16 +102,15 @@ class AccountingSystem():
             {key: value for key, value in x.items() if key in category_fieldnames}
             for x in main_data
         ]
-        payment_filename = self.current_path + '/mode_of_payment.csv'
+        payment_filename = self.current_path + "/mode_of_payment.csv"
         with open(payment_filename, "w", encoding="utf8", newline="\n") as f:
             category_writer = csv.DictWriter(f, fieldnames=category_fieldnames)
             category_writer.writeheader()
             category_writer.writerows(category_data)
 
-
     def print_report(self):
         """function to print report"""
-        ledger_filename = self.current_path + '/ledger.csv'
+        ledger_filename = self.current_path + "/ledger.csv"
         with open(ledger_filename, "r", encoding="utf8") as f:
             csv_reader = csv.DictReader(f)
             data = list(csv_reader)
@@ -166,7 +164,7 @@ class AccountingSystem():
             aggregate_data[key]["Debit"][month - 1] += float(x["Debit"])
             aggregate_data[key]["Credit"][month - 1] += float(x["Credit"])
 
-        report_filename = self.current_path + '/report.csv'
+        report_filename = self.current_path + "/report.csv"
         with open(report_filename, "w", encoding="utf8", newline="\n") as f:
             csv_writer = csv.DictWriter(f, fieldnames=header)
             csv_writer.writeheader()
@@ -190,11 +188,10 @@ class AccountingSystem():
             for x in report_reader:
                 print(x)
 
-
     def generate_txt(self):
         """function to generate text file of report generated"""
-        report_filename = self.current_path + '/report.csv'
-        text_filename = self.current_path + '/report.txt'
+        report_filename = self.current_path + "/report.csv"
+        text_filename = self.current_path + "/report.txt"
         self.print_report()
         with open(report_filename, "r", encoding="utf8") as f1, open(
             text_filename, "w", encoding="utf8"
@@ -204,11 +201,11 @@ class AccountingSystem():
                 temp = ""
                 print(x)
                 for index, i in enumerate(x):
-                    if index in range(1,14):
-                        temp += (f"{i:10}") 
+                    if index in range(1, 14):
+                        temp += f"{i:10}"
                     else:
-                        temp += (f"{i:14}") 
-                temp += '\n'
+                        temp += f"{i:14}"
+                temp += "\n"
                 f2.write(temp)
 
     def generate_random_data(self, n):
@@ -228,8 +225,16 @@ class AccountingSystem():
         date_list = sorted(date_list)
         categories = ["Food", "Rent", "Arcade", "Movies", "Travel", "Petrol", "EMI"]
         descriptions = ["Groceries", "Restaurant", "Internet", "Movie", "Flight"]
-        modes_of_payment = ["Credit Card", "Debit Card", "Cash", "G-pay", "Paytm", "Amazon-pay", "Phone-pay"]
-        
+        modes_of_payment = [
+            "Credit Card",
+            "Debit Card",
+            "Cash",
+            "G-pay",
+            "Paytm",
+            "Amazon-pay",
+            "Phone-pay",
+        ]
+
         category_list = random.choices(categories, k=100)
         description_list = random.choices(descriptions, k=100)
         mode_of_payment_list = random.choices(modes_of_payment, k=100)
@@ -254,7 +259,7 @@ class AccountingSystem():
 
 
 if __name__ == "__main__":
-    gaurav = AccountingSystem('Gaurav007')
+    gaurav = AccountingSystem("Gaurav007")
     gaurav.generate_random_data(10)
     # gaurav.generate_category_report()
     # gaurav.generate_payment_report()
